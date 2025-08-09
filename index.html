@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Khaled Diab — Final Project</title>
+<link rel="stylesheet" href="assets/css/styles.css" />
 
 <!-- Google font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -29,12 +31,18 @@
   .overlay-dim{position:fixed;inset:0;background:linear-gradient(180deg,rgba(4,4,5,0.12),rgba(4,4,5,0.6));z-index:1}
 
   /* Centered wrap */
-  .wrap{position:relative;z-index:5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+  .wrap{position:relative;z-index:5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1px}
   .card{width:min(980px,96%);max-width:980px;background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);border-radius:16px;padding:18px;backdrop-filter: blur(6px);box-shadow:0 12px 40px rgba(2,2,4,0.65);display:flex;gap:16px;align-items:flex-start}
   
   /* Left column (profile) */
-  .left{width:34%;min-width:220px;padding:10px}
-  .profile-row{display:flex;gap:12px;align-items:center}
+  .left{
+    width:34%;
+    min-width:220px;
+    padding:10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .profile-row{display:flex;gap:12px;align-items:center;flex-wrap: nowrap;}
   /* AVATAR -> make circular */
   .avatar{width:72px;height:72px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(135deg,var(--card),rgba(255,255,255,0.02));display:flex;align-items:center;justify-content:center}
   .avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
@@ -44,7 +52,13 @@
   .links-btn{margin-left:8px;padding:8px 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--white);font-weight:600;cursor:pointer;transition:all .18s ease}
   .links-btn:hover{box-shadow:0 8px 28px rgba(201,168,75,0.08);transform:translateY(-3px)}
 
-
+  /* DESC is now a block below profile-row */
+  .desc{
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
 
   /* Center: tabs & panels */
   .center{flex:1;padding:6px}
@@ -115,7 +129,8 @@
   /* responsiveness */
   @media (max-width:880px){
     .card{flex-direction:column;align-items:center;padding:16px}
-    .left{width:100%;display:flex;align-items:center;gap:12px}
+    .left{width:100%;display:flex;flex-direction: column;align-items:flex-start;gap:12px}
+    .profile-row{width:100%}
     .center{width:100%}
     .right{width:100%;flex-direction:row;gap:8px}
     .thumb{flex:1;height:72px}
@@ -162,6 +177,9 @@
           <!-- My Links button — now has a dedicated URL -->
           <button class="links-btn" id="linksBtn" data-url="https://guns.lol/loody" title="My Links">My Links</button>
         </div>
+
+        <!-- desc moved OUTSIDE profile-row, below it -->
+        <div class="desc">Designs exploring daylighting, materiality and human-centered circulation. Click each section to view renders, video, and the 3D model.</div>
       </div>
 
       <!-- center -->
@@ -275,80 +293,69 @@ const lightboxImg = document.getElementById('lightboxImg');
 
 function showLightbox(src, alt){
   lightboxImg.src = src;
-  lightboxImg.alt = alt || '';
-  lightbox.classList.add('show');
-  lightbox.setAttribute('aria-hidden','false');
+  lightboxImg.alt = alt || "Expanded image";
+  lightbox.setAttribute('aria-hidden', 'false');
+  lightbox.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
+
 function closeLightbox(){
-  lightbox.classList.remove('show');
-  lightbox.setAttribute('aria-hidden','true');
-  setTimeout(()=>{ lightboxImg.src = ''; }, 300);
+  lightbox.setAttribute('aria-hidden', 'true');
+  lightbox.style.display = 'none';
+  lightboxImg.src = '';
+  document.body.style.overflow = '';
 }
 
-/* clickable thumbs */
-document.querySelectorAll('.thumb').forEach(el=>{
-  el.addEventListener('click', ()=> {
-    const src = el.getAttribute('data-img') || el.querySelector('img')?.src;
-    if(src) showLightbox(src, el.title || '');
-    clickSnd.currentTime = 0; clickSnd.play().catch(()=>{});
-  });
-});
-
-/* ghost buttons that show images (data-img) */
-document.querySelectorAll('.btn.ghost[data-img]').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    const src = b.getAttribute('data-img');
-    if(src) showLightbox(src, '');
-    clickSnd.currentTime = 0; clickSnd.play().catch(()=>{});
-  });
-});
-
-/* lightbox close on click or ESC */
 lightbox.addEventListener('click', closeLightbox);
-window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeLightbox(); });
 
-/* Start overlay: must be clicked to begin audio (and unmute if needed) */
-const startOverlay = document.getElementById('startOverlay');
-const bgAudio = document.getElementById('bgAudio');
-const bgVideo = document.getElementById('bgVideo');
+document.querySelectorAll('.thumb').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    const imgSrc = t.getAttribute('data-img');
+    const alt = t.querySelector('img')?.alt || "Expanded image";
+    showLightbox(imgSrc, alt);
+  });
+});
 
-function startAll(){
-  // try play audio & video
-  bgAudio.muted = false;
-  bgAudio.play().catch(()=>{});
-  bgVideo.play().catch(()=>{});
-  // small shine on card
-  document.querySelector('.card').animate([{filter:'brightness(1)'},{filter:'brightness(1.06)'},{filter:'brightness(1)'}],{duration:1200,easing:'ease-in-out'});
-  // fade overlay
-  startOverlay.style.transition='opacity .9s ease';
-  startOverlay.style.opacity=0;
-  setTimeout(()=> startOverlay.style.display='none', 900);
-  clickSnd.currentTime = 0; clickSnd.play().catch(()=>{});
-}
-startOverlay.addEventListener('click', startAll, {once:true});
-startOverlay.addEventListener('touchstart', startAll, {once:true});
+/* Show render button */
+document.querySelectorAll('.btn.ghost').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const imgSrc = btn.getAttribute('data-img');
+    if(imgSrc) showLightbox(imgSrc, "Render image");
+  });
+});
 
-/* Delegated handler for elements that should open external links (data-url)
-   Centralized so each button can have its own distinct URL. */
-document.addEventListener('click', (e)=>{
-  const el = e.target.closest('[data-url]');
-  if(!el) return;
-  // don't intercept elements that are meant to show images (they have data-img only)
-  const url = el.getAttribute('data-url');
-  if(!url) return;
-  e.preventDefault();
-  clickSnd.currentTime = 0; clickSnd.play().catch(()=>{});
+/* My Links button */
+document.getElementById('linksBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('linksBtn').getAttribute('data-url');
   openLink(url);
 });
 
+/* Buttons with data-url */
+document.querySelectorAll('.btn.primary').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const url = btn.getAttribute('data-url');
+    openLink(url);
+  });
+});
 
+/* Start overlay — remove on click */
+const startOverlay = document.getElementById('startOverlay');
+startOverlay.addEventListener('click', ()=>{
+  startOverlay.style.display = 'none';
+  // Play background video & audio
+  const video = document.getElementById('bgVideo');
+  const audio = document.getElementById('bgAudio');
+  video.play().catch(()=>{});
+  audio.play().catch(()=>{});
+});
 
-/* Accessibility: keyboard navigation for tabs */
-tabs.forEach((t)=>{ t.setAttribute('tabindex','0'); t.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') t.click(); }); });
-
-/* Ensure main panel is visible on load */
-document.addEventListener('DOMContentLoaded', ()=>{ panels['panel-main'].style.display='flex'; });
-
+/* Custom cursor */
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e=>{
+  cursor.style.left = (e.clientX - 10) + 'px';
+  cursor.style.top = (e.clientY - 10) + 'px';
+});
 </script>
+
 </body>
 </html>
